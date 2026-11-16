@@ -37,6 +37,10 @@ const EngoldLogo = ({ onClick, className = '', size = 'default', inverted = fals
   );
 };
 
+// OFFICE LOCATION (used in the top bar and footer)
+const OFFICE_ADDRESS = '15 S Howard Ave, Suite 20, Roselle, IL 60172';
+const OFFICE_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(OFFICE_ADDRESS)}`;
+
 // SVG ICON HELPERS FOR TOP INFO BAR
 const MapPinIcon = ({ className = 'w-4 h-4' }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
@@ -305,12 +309,16 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between text-[12px] font-semibold">
           {/* LEFT: ADDRESS + HOURS */}
           <div className="flex items-center divide-x divide-white/30">
-            <div className="flex items-center gap-2 pr-5">
+            <a
+              href={OFFICE_MAPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 pr-5 hover:text-orange-100 transition-colors"
+            >
               <MapPinIcon className="w-4 h-4 text-white" />
-              {/* TODO: replace with the real office address */}
-              <span>123 Business Ave, Suite 100, City, ST 00000</span>
-            </div>
-            <div className="flex items-center gap-2 pl-5">
+              <span><span className="hidden xl:inline">Chicago Office: </span>{OFFICE_ADDRESS}</span>
+            </a>
+            <div className="hidden lg:flex items-center gap-2 pl-5">
               <ClockIcon className="w-4 h-4 text-white" />
               <span>Mon – Fri: 8am - 6pm EST</span>
             </div>
@@ -763,10 +771,19 @@ export default function App() {
                     +888 252 7899
                   </a>
                 </li>
-                <li className="flex items-start gap-2.5 text-slate-400">
-                  <MapPinIcon className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
-                  {/* TODO: replace with the real office address (also in the top bar) */}
-                  <span>123 Business Ave, Suite 100, City, ST 00000</span>
+                <li>
+                  <a
+                    href={OFFICE_MAPS_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-start gap-2.5 hover:text-orange-400 transition-colors"
+                  >
+                    <MapPinIcon className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                    <span>
+                      <span className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-0.5">Chicago Office</span>
+                      15 S Howard Ave, Suite 20<br />Roselle, IL 60172
+                    </span>
+                  </a>
                 </li>
               </ul>
             </div>

@@ -1,31 +1,122 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ShieldCheck, 
-  Building2, 
-  HeartHandshake, 
-  Zap, 
-  ArrowRight, 
-  CheckCircle2, 
-  Lock, 
-  FileText, 
-  ChevronRight,
-  TrendingUp,
-  Cpu
-} from 'lucide-react';
+import PageHero from './PageHero.jsx';
+import { ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
+
+const CONTACT_EMAIL = 'mailto:info@engoldconsultingllc.com';
+
+const INDUSTRY_SIBLINGS = [
+  { key: 'industries', label: 'All Industries' },
+  { key: 'financial-services', label: 'Financial Services' },
+  { key: 'healthcare', label: 'Healthcare & Life Sciences' },
+  { key: 'energy', label: 'Energy & Utilities' },
+  { key: 'retail', label: 'Retail & Consumer' },
+  { key: 'manufacturing', label: 'Manufacturing & Industrial' },
+];
+
+// Unique hero content for every Industries route
+const INDUSTRY_HEROES = {
+  industries: {
+    eyebrow: 'Industries We Serve',
+    title: 'Transforming regulatory pressure into',
+    highlight: 'enterprise advantage.',
+    description:
+      'For over two decades, ENGOLD has partnered with executive leadership across the world’s most stringently regulated industries, deploying engineering-first compliance, zero-trust architectures and operational safeguards.',
+    image: '/images/Global_finance.jpg',
+    stats: [
+      { value: '6', label: 'Regulated sectors with dedicated practice leads' },
+      { value: '20+', label: 'Years advising regulated enterprises' },
+      { value: '40+', label: 'Regulatory frameworks mastered' },
+      { value: '99.9%', label: 'Average client audit pass rate' },
+    ],
+    primaryCta: { label: 'Find Your Sector', page: 'financial-services' },
+    secondaryCta: { label: 'Browse Services', page: 'solutions' },
+  },
+  'financial-services': {
+    eyebrow: 'Banking · Capital Markets · FinTech',
+    title: 'Controls that move at the',
+    highlight: 'speed of capital.',
+    description:
+      'From Tier-1 banks to high-growth FinTechs, we automate SOX 404 testing, harden trading and payments infrastructure, and turn regulatory scrutiny from FINRA, FFIEC and the SEC into a competitive operating advantage.',
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=80',
+    stats: [
+      { value: '$10B+', label: 'Assets under protected oversight' },
+      { value: '99.9%', label: 'SOX / GLBA audit pass rate' },
+      { value: '-64%', label: 'Fraud review latency' },
+      { value: '120+', label: 'Automated key controls deployed' },
+    ],
+    primaryCta: { label: 'Book a SOX Readiness Review', href: CONTACT_EMAIL },
+    secondaryCta: { label: 'Compliance Services', page: 'compliance' },
+  },
+  healthcare: {
+    eyebrow: 'Providers · Payers · Life Sciences',
+    title: 'Protect every patient record.',
+    highlight: 'Accelerate every innovation.',
+    description:
+      'Telehealth, connected medical devices and decentralized clinical trials have expanded the attack surface overnight. We build HIPAA- and HITRUST-ready privacy programs that safeguard ePHI without slowing down care delivery or research.',
+    image: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1920&q=80',
+    stats: [
+      { value: '45M+', label: 'Patient records fortified' },
+      { value: '100%', label: 'HIPAA / HITRUST compliance' },
+      { value: '< 24 hrs', label: 'Vendor (BAA) risk turnaround' },
+      { value: '0', label: 'Reportable breaches post-engagement' },
+    ],
+    primaryCta: { label: 'Request a HIPAA Risk Assessment', href: CONTACT_EMAIL },
+    secondaryCta: { label: 'Data Privacy Services', page: 'data-privacy' },
+  },
+  energy: {
+    eyebrow: 'Utilities · Oil & Gas · Renewables',
+    title: 'Keep the grid running,',
+    highlight: 'whatever comes at it.',
+    description:
+      'Nation-state actors now target pipelines, substations and smart-grid edge devices. We separate operational technology from corporate IT, modernize legacy SCADA safely, and keep you continuously audit-ready for NERC CIP and TSA directives.',
+    image: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&w=1920&q=80',
+    stats: [
+      { value: '250K+', label: 'Grid points protected' },
+      { value: '100%', label: 'NERC CIP verification score' },
+      { value: '< 15 min', label: 'Incident containment time' },
+      { value: '24/7', label: 'OT threat monitoring coverage' },
+    ],
+    primaryCta: { label: 'Schedule an OT Security Review', href: CONTACT_EMAIL },
+    secondaryCta: { label: 'Cyber & Data Architecture', page: 'cyber-data' },
+  },
+  retail: {
+    eyebrow: 'Omnichannel · E-commerce · Consumer Brands',
+    title: 'Secure every checkout,',
+    highlight: 'in-store and online.',
+    description:
+      'Peak-season traffic, card-not-present fraud and sprawling supplier networks put customer trust on the line every day. We harden POS and e-commerce platforms, achieve PCI DSS 4.0 and protect the customer data your brand is built on.',
+    image: 'https://images.unsplash.com/photo-1556740758-90de940ed532?auto=format&fit=crop&w=1920&q=80',
+    stats: [
+      { value: '120M+', label: 'Transaction records protected' },
+      { value: '100%', label: 'PCI DSS compliance rate' },
+      { value: '+72%', label: 'Fraud detection improvement' },
+      { value: '300+', label: 'Suppliers risk-assessed' },
+    ],
+    primaryCta: { label: 'Start a PCI DSS 4.0 Assessment', href: CONTACT_EMAIL },
+    secondaryCta: { label: 'Vendor Risk Services', page: 'vendor-risk' },
+  },
+  manufacturing: {
+    eyebrow: 'Smart Factory · Industrial IoT · Supply Chain',
+    title: 'Connected factories need',
+    highlight: 'uncompromising security.',
+    description:
+      'As IT and OT networks converge, a single compromised sensor can halt a production line. We secure industrial IoT, protect intellectual property and de-risk ERP modernization so your plants stay productive and compliant worldwide.',
+    image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1920&q=80',
+    stats: [
+      { value: '85K+', label: 'OT endpoints secured' },
+      { value: '100%', label: 'IEC 62443 compliance' },
+      { value: '-56%', label: 'Unplanned downtime' },
+      { value: '40+', label: 'Plants assessed globally' },
+    ],
+    primaryCta: { label: 'Assess Your Plant Security', href: CONTACT_EMAIL },
+    secondaryCta: { label: 'IT Risk Management', page: 'it-risk' },
+  },
+};
 
 export default function Industries({ pageKey = 'industries', onNavigate }) {
-  const [selectedFilter, setSelectedFilter] = useState(
-    ['financial-services', 'healthcare', 'energy', 'retail', 'manufacturing'].includes(pageKey) ? pageKey : 'all'
-  );
-
-  useEffect(() => {
-    if (['financial-services', 'healthcare', 'energy', 'retail', 'manufacturing'].includes(pageKey)) {
-      setSelectedFilter(pageKey);
-    } else if (pageKey === 'industries') {
-      setSelectedFilter('all');
-    }
-  }, [pageKey]);
+  const hero = INDUSTRY_HEROES[pageKey] || INDUSTRY_HEROES.industries;
+  const selectedFilter = pageKey in INDUSTRY_HEROES && pageKey !== 'industries' ? pageKey : 'all';
 
   const industriesData = [
     {
@@ -167,98 +258,21 @@ export default function Industries({ pageKey = 'industries', onNavigate }) {
     : industriesData.filter(item => item.sectorKey === selectedFilter);
 
   return (
-    <main className="bg-[#F8FAFC] min-h-screen text-slate-900 py-16 px-6 sm:px-12">
-      <div className="max-w-7xl mx-auto space-y-16">
+    <main className="bg-[#F8FAFC] min-h-screen text-slate-900">
+      <PageHero
+        pageKey={pageKey}
+        onNavigate={onNavigate}
+        breadcrumb={[
+          { label: "Home", page: "home" },
+          ...(pageKey === "industries" ? [] : [{ label: "Industries", page: "industries" }]),
+          { label: INDUSTRY_SIBLINGS.find((s) => s.key === pageKey)?.label || "Industries" },
+        ]}
+        siblings={INDUSTRY_SIBLINGS}
+        siblingsLabel="Industries"
+        {...hero}
+      />
 
-        {/* HERO TITLE SECTION */}
-        <section className="space-y-6 max-w-4xl">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-200/70 border border-slate-300/50 text-slate-800 text-xs font-bold tracking-wide uppercase">
-            <Building2 className="w-3.5 h-3.5 text-orange-600" />
-            <span>Sector Specialization & Domain Mastery</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.08]">
-            Transforming Regulatory Pressure Into <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600">Enterprise Advantage</span>
-          </h1>
-
-          <p className="text-slate-600 text-lg sm:text-xl leading-relaxed max-w-3xl">
-            For over two decades, Engold Consulting has partnered with executive leadership across the world’s most stringently regulated industries—deploying engineering-first compliance, zero-trust architectures, and operational safeguards.
-          </p>
-
-          {/* META-STYLE PILL FILTER TABS */}
-          <div className="pt-4 flex flex-wrap gap-2 items-center">
-            <button
-              onClick={() => setSelectedFilter('all')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                selectedFilter === 'all'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              All Sectors
-            </button>
-            <button
-              onClick={() => setSelectedFilter('financial-services')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                selectedFilter === 'financial-services'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              Banking & Financial Services
-            </button>
-            <button
-              onClick={() => setSelectedFilter('healthcare')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                selectedFilter === 'healthcare'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              Healthcare & Life Sciences
-            </button>
-            <button
-              onClick={() => setSelectedFilter('energy')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                selectedFilter === 'energy'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              Energy & Critical Infrastructure
-            </button>
-            <button
-              onClick={() => setSelectedFilter('retail')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                selectedFilter === 'retail'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              Retail & Consumer
-            </button>
-            <button
-              onClick={() => setSelectedFilter('manufacturing')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                selectedFilter === 'manufacturing'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              Manufacturing & Industrial
-            </button>
-            <button
-              onClick={() => setSelectedFilter('technology')}
-              className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ${
-                selectedFilter === 'technology'
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              Enterprise SaaS & Tech
-            </button>
-          </div>
-        </section>
+      <div className="max-w-7xl mx-auto px-6 sm:px-12 py-16 space-y-16">
 
         {/* COMPREHENSIVE SECTOR BENTO CARDS */}
         <section className="space-y-10">

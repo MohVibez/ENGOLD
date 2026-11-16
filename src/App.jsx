@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // IMPORT PAGE COMPONENTS
@@ -11,55 +11,40 @@ import Insights from './Insights.jsx';
 import Careers from './Careers.jsx';
 import Legal from './Legal.jsx';
 
-// WORLD-CLASS ENGOLD BRAND LOGO WITH MODERN BESIDE-TEXT TYPOGRAPHY
+// ENGOLD BRAND LOGO (official lockup: dark text for light backgrounds, white text for dark backgrounds)
 const EngoldLogo = ({ onClick, className = '', size = 'default', inverted = false }) => {
-  const [imgError, setImgError] = useState(false);
-
-  const iconSizes = {
-    compact: 'h-9 w-auto',
-    default: 'h-11 sm:h-12 w-auto',
-    large: 'h-12 sm:h-14 w-auto'
+  const heights = {
+    compact: 'h-9',
+    default: 'h-10 sm:h-12',
+    large: 'h-12 sm:h-14',
   };
 
   return (
-    <div 
-      onClick={onClick} 
-      className={`inline-flex items-center gap-3 sm:gap-3.5 select-none cursor-pointer group transition-all duration-300 ${className}`}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="ENGOLD Consulting, go to homepage"
+      className={`inline-flex items-center shrink-0 select-none group ${className}`}
     >
-      {!imgError && (
-        <img
-          src="/images/ENGOLD-LOGO.png"
-          alt="ENGOLD Symbol"
-          className={`${iconSizes[size] || iconSizes.default} object-contain shrink-0 transition-transform duration-300 group-hover:scale-105 drop-shadow-sm`}
-          onError={() => setImgError(true)}
-        />
-      )}
-
-      <div className="flex flex-col justify-center leading-none">
-        <div className="flex items-baseline space-x-1">
-          <span 
-            className={`text-[21px] sm:text-[25px] font-black tracking-[0.04em] ${inverted ? 'text-white group-hover:text-orange-400' : 'text-slate-900 group-hover:text-orange-600'} transition-colors duration-200`}
-            style={{ 
-              fontFamily: "'Cinzel', 'Playfair Display', Georgia, serif",
-              letterSpacing: '0.05em'
-            }}
-          >
-            ENGOLD
-          </span>
-          <span className="text-[10px] font-sans font-bold text-orange-500 align-top">®</span>
-        </div>
-        <span 
-          className={`text-[8.5px] sm:text-[9.5px] font-extrabold uppercase tracking-[0.38em] ${inverted ? 'text-slate-300' : 'text-slate-800'} mt-1 transition-colors duration-200`}
-          style={{ fontFamily: "'Satoshi', sans-serif" }}
-        >
-          CONSULTING
-        </span>
-      </div>
-    </div>
+      <img
+        src={inverted ? '/images/engold-logo-light.png' : '/images/engold-logo-dark.png'}
+        alt="ENGOLD Consulting"
+        width="3987"
+        height="1349"
+        className={`${heights[size] || heights.default} w-auto object-contain transition-opacity duration-300 group-hover:opacity-85`}
+      />
+    </button>
   );
 };
 
 // SVG ICON HELPERS FOR TOP INFO BAR
+const MapPinIcon = ({ className = 'w-4 h-4' }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
 const ClockIcon = ({ className = 'w-4 h-4' }) => (
   <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
     <circle cx="12" cy="12" r="10" />
@@ -93,6 +78,29 @@ const ChevronRight = () => (
   </svg>
 );
 
+// Maps any page to exactly one top-level nav item, so only one link is ever highlighted
+const getActiveNav = (page) => {
+  if (page === 'home') return 'home';
+  if (page === 'about') return 'about';
+  if (['careers', 'open-positions'].includes(page)) return 'careers';
+  if (page === 'managed-services') return 'recruitment';
+  if (['industries', 'financial-services', 'healthcare', 'energy', 'retail', 'manufacturing'].includes(page)) return 'industries';
+  if (['solutions', 'advisory', 'risk-consulting', 'it-risk', 'compliance', 'vendor-risk', 'data-privacy', 'cyber-data'].includes(page)) return 'services';
+  return null;
+};
+
+// Animated underline: slides between nav items on the active one, grows in on hover otherwise
+const NavIndicator = ({ active }) =>
+  active ? (
+    <motion.span
+      layoutId="nav-underline"
+      className="absolute left-3 right-3 -bottom-[3px] h-[3px] rounded-full bg-orange-500"
+      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+    />
+  ) : (
+    <span className="absolute left-3 right-3 -bottom-[3px] h-[3px] rounded-full bg-orange-300 origin-center scale-x-0 transition-transform duration-300 ease-out group-hover:scale-x-100" />
+  );
+
 const Menu = () => (
   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
     <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
@@ -105,30 +113,91 @@ const X = () => (
   </svg>
 );
 
+// ─── ROUTING: every page gets its own real URL (/about, /careers, /article/<id>) ───
+const PAGES = new Set([
+  'home', 'about', 'article',
+  'solutions', 'advisory', 'risk-consulting', 'it-risk', 'compliance', 'vendor-risk', 'data-privacy', 'cyber-data', 'managed-services',
+  'industries', 'financial-services', 'healthcare', 'energy', 'retail', 'manufacturing',
+  'insights', 'ai-hub', 'global-surveys', 'thought-leadership',
+  'careers', 'open-positions',
+  'privacy', 'terms', 'cookies',
+]);
+const DEFAULT_ARTICLE_ID = 'salesforce-growth';
+
+const pathFor = (page, articleId) => {
+  if (page === 'home') return '/';
+  if (page === 'article') return `/article/${encodeURIComponent(articleId || DEFAULT_ARTICLE_ID)}`;
+  return `/${page}`;
+};
+
+// Reads the page from the URL. Also upgrades old "/#about" links to "/about".
+const parseLocation = () => {
+  const legacyHash = window.location.hash.replace(/^#\/?/, '');
+  const raw = window.location.pathname === '/' && PAGES.has(legacyHash) ? legacyHash : window.location.pathname;
+  const [page, id] = raw.replace(/^\/+|\/+$/g, '').split('/');
+  if (page === 'article') return { page: 'article', articleId: id ? decodeURIComponent(id) : DEFAULT_ARTICLE_ID };
+  return { page: PAGES.has(page) ? page : 'home', articleId: null };
+};
+
+const titleFor = (page) =>
+  page === 'home'
+    ? 'ENGOLD Consulting'
+    : `${page.split('-').map((w) => (w.length <= 2 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))).join(' ')} | ENGOLD Consulting`;
+
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
-  const [activeArticleId, setActiveArticleId] = useState('salesforce-growth');
+  const [initialRoute] = useState(parseLocation);
+  const [currentPage, setCurrentPage] = useState(initialRoute.page);
+  const [activeArticleId, setActiveArticleId] = useState(initialRoute.articleId || DEFAULT_ARTICLE_ID);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [activeSubRisk, setActiveSubRisk] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileExpandedSection, setMobileExpandedSection] = useState(null);
 
-  const navigateTo = (page) => {
-    setCurrentPage(page);
+  const closeMenus = () => {
     setActiveDropdown(null);
     setIsMobileMenuOpen(false);
     setMobileExpandedSection(null);
-    if (page === 'home') {
-      window.history.pushState("", document.title, window.location.pathname);
-    } else {
-      window.location.hash = page;
-    }
   };
 
-  const handleOpenArticle = (id) => {
-    setActiveArticleId(id);
-    navigateTo('article');
+  const navigateTo = (page, articleId = activeArticleId) => {
+    const path = pathFor(page, articleId);
+    if (window.location.pathname !== path || window.location.hash) {
+      window.history.pushState({ page, articleId }, '', path);
+    }
+    setCurrentPage(page);
+    if (page === 'article') setActiveArticleId(articleId);
+    closeMenus();
   };
+
+  const handleOpenArticle = (id) => navigateTo('article', id);
+
+  // Normalise the URL on first load (e.g. old "/#about" → "/about") and handle browser back/forward
+  useEffect(() => {
+    window.history.scrollRestoration = 'manual';
+    const canonical = pathFor(initialRoute.page, initialRoute.articleId);
+    if (window.location.pathname !== canonical) window.history.replaceState(null, '', canonical);
+
+    const onPopState = () => {
+      const { page, articleId } = parseLocation();
+      setCurrentPage(page);
+      if (articleId) setActiveArticleId(articleId);
+      closeMenus();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Every new page starts at the top, like a real page load
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.title = titleFor(currentPage);
+  }, [currentPage, activeArticleId]);
+
+  const activeNav = getActiveNav(currentPage);
+  const navItemClass = (key) =>
+    `group relative px-3 py-2 text-[14px] transition-colors duration-200 ${
+      activeNav === key ? 'text-orange-600 font-semibold' : 'text-gray-700 font-semibold hover:text-orange-600'
+    }`;
 
   const toggleMobileAccordion = (section) => {
     setMobileExpandedSection(mobileExpandedSection === section ? null : section);
@@ -137,60 +206,54 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-gray-900 antialiased selection:bg-orange-500 selection:text-white">
 
-      {/* ═══════════════ TOP INFO BAR ═══════════════ */}
-      <div className="hidden md:block bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          {/* LEFT: LOGO */}
-          <EngoldLogo onClick={() => navigateTo('home')} />
+      {/* ═══════════════ TOP INFO BAR (BRAND ORANGE) ═══════════════ */}
+      <div className="hidden md:block bg-orange-500 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between text-[12px] font-semibold">
+          {/* LEFT: ADDRESS + HOURS */}
+          <div className="flex items-center divide-x divide-white/30">
+            <div className="flex items-center gap-2 pr-5">
+              <MapPinIcon className="w-4 h-4 text-white" />
+              {/* TODO: replace with the real office address */}
+              <span>123 Business Ave, Suite 100, City, ST 00000</span>
+            </div>
+            <div className="flex items-center gap-2 pl-5">
+              <ClockIcon className="w-4 h-4 text-white" />
+              <span>Mon – Fri: 8am - 6pm EST</span>
+            </div>
+          </div>
 
-          {/* RIGHT: CONTACT STRIP */}
-          <div className="flex items-center divide-x divide-gray-200">
-            {/* Business Hours */}
-            <div className="flex items-center gap-2.5 px-5">
-              <ClockIcon className="w-[18px] h-[18px] text-orange-500" />
-              <div className="leading-tight">
-                <span className="text-[11px] font-semibold text-gray-500 block">Business Hours</span>
-                <span className="text-[12px] font-bold text-gray-800">8am - 6pm EST</span>
-              </div>
+          {/* RIGHT: CONTACT */}
+          <div className="flex items-center divide-x divide-white/30">
+            <div className="flex items-center gap-2 pr-5">
+              <MailIcon className="w-4 h-4 text-white" />
+              <a href="mailto:info@engoldconsultingllc.com" className="hover:text-orange-100 transition-colors">info@engoldconsultingllc.com</a>
             </div>
-            {/* Email */}
-            <div className="flex items-center gap-2.5 px-5">
-              <MailIcon className="w-[18px] h-[18px] text-orange-500" />
-              <div className="leading-tight">
-                <span className="text-[11px] font-semibold text-gray-500 block">Email Us</span>
-                <a href="mailto:info@engoldconsultingllc.com" className="text-[12px] font-bold text-gray-800 hover:text-orange-600 transition-colors">info@engoldconsultingllc.com</a>
-              </div>
-            </div>
-            {/* Phone */}
-            <div className="flex items-center gap-2.5 pl-5">
-              <PhoneIcon className="w-[18px] h-[18px] text-orange-500" />
-              <div className="leading-tight">
-                <span className="text-[11px] font-semibold text-gray-500 block">Contact Us</span>
-                <a href="tel:+8882527899" className="text-[12px] font-bold text-gray-800 hover:text-orange-600 transition-colors">+888 252 7899</a>
-              </div>
+            <div className="flex items-center gap-2 pl-5">
+              <PhoneIcon className="w-4 h-4 text-white" />
+              <a href="tel:+8882527899" className="hover:text-orange-100 transition-colors">+888 252 7899</a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ═══════════════ MAIN NAVIGATION BAR (BRAND ORANGE) ═══════════════ */}
-      <header className="sticky top-0 z-50 bg-orange-500 border-b border-orange-600 text-white shadow-md transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+      {/* ═══════════════ MAIN NAVIGATION BAR (WHITE: LOGO + LINKS) ═══════════════ */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 text-gray-900 shadow-sm transition-all duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-6">
 
-          {/* MOBILE LOGO (hidden on desktop since it's in the info bar) */}
-          <div className="md:hidden">
-            <EngoldLogo onClick={() => navigateTo('home')} className="!h-10" inverted={true} />
-          </div>
+          {/* LOGO */}
+          <EngoldLogo onClick={() => navigateTo('home')} />
 
           {/* DESKTOP PILL NAVIGATION */}
-          <nav className="hidden lg:flex items-center space-x-1 text-[14px] font-semibold text-white mx-auto">
+          <nav className="hidden lg:flex items-center space-x-1 text-[14px] font-semibold text-gray-700 mx-auto">
 
             {/* HOME */}
             <button
               onClick={() => navigateTo('home')}
-              className={`px-4 py-2 rounded-full transition-all ${currentPage === 'home' ? 'bg-white text-orange-600 font-bold shadow-sm' : 'text-white/90 hover:text-white hover:bg-white/15'}`}
+              className={navItemClass('home')}
+              aria-current={activeNav === 'home' ? 'page' : undefined}
             >
               Home
+              <NavIndicator active={activeNav === 'home'} />
             </button>
 
             {/* SERVICES (was Solutions) */}
@@ -201,9 +264,12 @@ export default function App() {
             >
               <button
                 onClick={() => navigateTo('solutions')}
-                className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${['solutions', 'advisory', 'risk-consulting', 'it-risk', 'compliance', 'vendor-risk', 'data-privacy', 'cyber-data', 'managed-services'].includes(currentPage) ? 'bg-white text-orange-600 font-bold shadow-sm' : 'text-white/90 hover:text-white hover:bg-white/15'}`}
+                className={`${navItemClass('services')} flex items-center gap-1.5`}
+                aria-current={activeNav === 'services' ? 'page' : undefined}
               >
-                <span>Services</span> <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                <span>Services</span>
+                <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${activeDropdown === 'solutions' ? 'rotate-180' : ''}`} />
+                <NavIndicator active={activeNav === 'services'} />
               </button>
 
               <AnimatePresence>
@@ -273,9 +339,12 @@ export default function App() {
             >
               <button
                 onClick={() => navigateTo('industries')}
-                className={`px-4 py-2 rounded-full transition-all flex items-center gap-1.5 ${['industries', 'financial-services', 'healthcare', 'energy', 'retail', 'manufacturing'].includes(currentPage) ? 'bg-white text-orange-600 font-bold shadow-sm' : 'text-white/90 hover:text-white hover:bg-white/15'}`}
+                className={`${navItemClass('industries')} flex items-center gap-1.5`}
+                aria-current={activeNav === 'industries' ? 'page' : undefined}
               >
-                <span>Industries</span> <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                <span>Industries</span>
+                <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${activeDropdown === 'industries' ? 'rotate-180' : ''}`} />
+                <NavIndicator active={activeNav === 'industries'} />
               </button>
 
               <AnimatePresence>
@@ -312,36 +381,34 @@ export default function App() {
               </AnimatePresence>
             </div>
 
-            {/* ABOUT US */}
+            {/* RECRUITMENT */}
             <button
-              onClick={() => navigateTo('about')}
-              className={`px-4 py-2 rounded-full transition-all ${currentPage === 'about' ? 'bg-white text-orange-600 font-bold shadow-sm' : 'text-white/90 hover:text-white hover:bg-white/15'}`}
+              onClick={() => navigateTo('managed-services')}
+              className={navItemClass('recruitment')}
+              aria-current={activeNav === 'recruitment' ? 'page' : undefined}
             >
-              About
+              Recruitment
+              <NavIndicator active={activeNav === 'recruitment'} />
             </button>
 
             {/* CAREERS */}
             <button
               onClick={() => navigateTo('careers')}
-              className={`px-4 py-2 rounded-full transition-all ${['careers', 'open-positions'].includes(currentPage) ? 'bg-white text-orange-600 font-bold shadow-sm' : 'text-white/90 hover:text-white hover:bg-white/15'}`}
+              className={navItemClass('careers')}
+              aria-current={activeNav === 'careers' ? 'page' : undefined}
             >
               Careers
+              <NavIndicator active={activeNav === 'careers'} />
             </button>
 
-            {/* IT */}
+            {/* ABOUT US */}
             <button
-              onClick={() => navigateTo('cyber-data')}
-              className={`px-4 py-2 rounded-full transition-all ${['cyber-data', 'it-risk'].includes(currentPage) ? 'bg-white text-orange-600 font-bold shadow-sm' : 'text-white/90 hover:text-white hover:bg-white/15'}`}
+              onClick={() => navigateTo('about')}
+              className={navItemClass('about')}
+              aria-current={activeNav === 'about' ? 'page' : undefined}
             >
-              IT
-            </button>
-
-            {/* RECRUITMENT */}
-            <button
-              onClick={() => navigateTo('managed-services')}
-              className={`px-4 py-2 rounded-full transition-all ${['managed-services', 'open-positions'].includes(currentPage) ? 'bg-white text-orange-600 font-bold shadow-sm' : 'text-white/90 hover:text-white hover:bg-white/15'}`}
-            >
-              Recruitment
+              About
+              <NavIndicator active={activeNav === 'about'} />
             </button>
           </nav>
 
@@ -355,9 +422,17 @@ export default function App() {
               href="https://www.linkedin.com/company/engold-consulting/"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-6 py-2 rounded-full bg-slate-900 hover:bg-slate-950 text-white text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-1.5"
+              className={`group relative flex items-center gap-2.5 pl-1.5 pr-5 py-1.5 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-[13px] font-bold tracking-wide shadow-lg shadow-orange-500/30 ring-1 ring-orange-600/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/40 hover:from-orange-600 hover:to-orange-700 ${activeDropdown === 'contact' ? 'shadow-xl shadow-orange-500/40' : ''}`}
             >
-              <span>Contact Us</span> <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+              <span className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white text-orange-600 shadow-sm">
+                <PhoneIcon className="w-4 h-4 transition-transform duration-300 group-hover:rotate-12" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 ring-2 ring-white" />
+              </span>
+              <span className="flex flex-col leading-none">
+                <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-orange-100">Let's talk</span>
+                <span className="mt-0.5">Contact Us</span>
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 opacity-90 transition-transform duration-300 ${activeDropdown === 'contact' ? 'rotate-180' : ''}`} />
             </a>
 
             <AnimatePresence>
@@ -419,7 +494,7 @@ export default function App() {
           {/* MOBILE MENU TOGGLE BUTTON */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2.5 rounded-full bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm focus:outline-none transition-colors"
+            className="lg:hidden p-2.5 rounded-full bg-orange-50 text-orange-600 hover:bg-orange-100 focus:outline-none transition-colors"
             aria-label="Toggle navigation menu"
           >
             {isMobileMenuOpen ? <X /> : <Menu />}
@@ -487,13 +562,13 @@ export default function App() {
                 )}
               </div>
 
-              {/* ABOUT US */}
+              {/* RECRUITMENT */}
               <div className="border-b border-gray-100 pb-3">
                 <button
-                  onClick={() => navigateTo('about')}
+                  onClick={() => navigateTo('managed-services')}
                   className="w-full text-left text-base font-bold text-gray-900 py-2 hover:text-orange-600 block"
                 >
-                  About Us
+                  Recruitment
                 </button>
               </div>
 
@@ -507,23 +582,13 @@ export default function App() {
                 </button>
               </div>
 
-              {/* IT */}
+              {/* ABOUT US */}
               <div className="border-b border-gray-100 pb-3">
                 <button
-                  onClick={() => navigateTo('cyber-data')}
+                  onClick={() => navigateTo('about')}
                   className="w-full text-left text-base font-bold text-gray-900 py-2 hover:text-orange-600 block"
                 >
-                  IT
-                </button>
-              </div>
-
-              {/* RECRUITMENT */}
-              <div className="border-b border-gray-100 pb-3">
-                <button
-                  onClick={() => navigateTo('managed-services')}
-                  className="w-full text-left text-base font-bold text-gray-900 py-2 hover:text-orange-600 block"
-                >
-                  Recruitment
+                  About Us
                 </button>
               </div>
 
@@ -585,27 +650,31 @@ export default function App() {
         <div className="max-w-7xl mx-auto space-y-16">
           
           {/* TOP SECTION: BRAND & VISION */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pb-12 border-b border-slate-800">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pb-12 border-b border-slate-800">
             <div className="lg:col-span-5 space-y-4">
               <EngoldLogo onClick={() => navigateTo('home')} inverted={true} />
               <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
                 Global advisory bridging executive vision with operational precision across IT governance, risk intelligence, and enterprise transformation.
               </p>
             </div>
-            <div className="lg:col-span-7 flex flex-col sm:flex-row sm:items-center justify-between lg:justify-end gap-6">
-              <div className="space-y-1">
+            <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="space-y-2 min-w-0">
                 <span className="text-[11px] font-mono uppercase tracking-widest text-orange-400 font-bold block">ENGOLD MOTTO</span>
-                <p className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                  Face the Future with Confidence<sup>®</sup>
+                <p className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">
+                  Face the Future with Confidence<sup className="text-xs align-super">®</sup>
                 </p>
+                <p className="text-sm text-slate-400">Ready to strengthen your risk and governance posture?</p>
               </div>
               <a
                 href="https://www.linkedin.com/company/engold-consulting/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-6 py-3 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-lg shadow-orange-500/25 shrink-0 inline-block text-center"
+                className="group self-start sm:self-auto shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5"
               >
                 Start an Engagement
+                <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
               </a>
             </div>
           </div>

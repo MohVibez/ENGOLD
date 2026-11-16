@@ -139,9 +139,102 @@ const parseLocation = () => {
   return { page: PAGES.has(page) ? page : 'home', articleId: null };
 };
 
+const FOOTER_COLUMNS = [
+  {
+    title: 'Services',
+    links: [
+      { label: 'Executive Advisory', page: 'advisory' },
+      { label: 'Risk Consulting', page: 'risk-consulting' },
+      { label: 'Compliance Management', page: 'compliance' },
+      { label: 'Cyber & Data Architecture', page: 'cyber-data' },
+      { label: 'Managed Services', page: 'managed-services' },
+    ],
+  },
+  {
+    title: 'Industries',
+    links: [
+      { label: 'Financial Services & Banking', page: 'financial-services' },
+      { label: 'Healthcare & Life Sciences', page: 'healthcare' },
+      { label: 'Energy & Infrastructure', page: 'energy' },
+      { label: 'Retail & Consumer', page: 'retail' },
+      { label: 'Manufacturing & Industrial', page: 'manufacturing' },
+    ],
+  },
+  {
+    title: 'Insights',
+    links: [
+      { label: 'Artificial Intelligence Hub', page: 'ai-hub' },
+      { label: 'Global Executive Surveys', page: 'global-surveys' },
+      { label: 'Salesforce Case Study', page: 'article', articleId: 'salesforce-growth' },
+      { label: 'Privacy Risk Automation', page: 'article', articleId: 'privacy-risk' },
+    ],
+  },
+  {
+    title: 'Company',
+    links: [
+      { label: 'About ENGOLD', page: 'about' },
+      { label: 'Careers & Culture', page: 'careers' },
+      { label: 'Open Positions', page: 'open-positions' },
+    ],
+  },
+];
+
+// ─── PER-PAGE SEO META ───
+const SITE_URL = 'https://engoldconsultingllc.com';
+const DEFAULT_DESCRIPTION =
+  'ENGOLD Consulting helps regulated enterprises turn compliance into advantage, with IT risk management, SOX & SOC 2 readiness, zero-trust cybersecurity, data privacy and ERP advisory.';
+const PAGE_DESCRIPTIONS = {
+  about: 'Meet ENGOLD Consulting: two decades of advisory experience bridging executive vision with operational precision across IT governance, risk and transformation.',
+  solutions: 'Explore ENGOLD services: executive advisory, risk consulting, IT risk, compliance, vendor risk, data privacy, cyber & data architecture and managed services.',
+  advisory: 'Executive advisory for CEOs, CIOs and boards: digital transformation roadmaps, technology operating models and M&A technology due diligence.',
+  'risk-consulting': 'Enterprise risk assessments, control rationalization, internal audit co-sourcing and KRI design that give leadership a single, prioritized view of risk.',
+  'it-risk': 'IT general controls, segregation of duties, cloud governance and resilience testing that stand up to auditors without slowing engineering.',
+  compliance: 'SOX 404, SOC 1 & SOC 2 readiness and unified control frameworks with continuous compliance monitoring. Be audit-ready every day.',
+  'vendor-risk': 'Third-party and vendor risk management: program design, due diligence, continuous monitoring and contract risk review.',
+  'data-privacy': 'GDPR and CCPA/CPRA privacy programs: data mapping, privacy impact assessments, consent and DSAR automation, and AI data governance.',
+  'cyber-data': 'Zero-trust architecture, IAM & PAM implementation, SIEM detection engineering and cloud security across AWS, Azure and GCP.',
+  'managed-services': 'Managed GRC, 24/7 SIEM & SOC, access reviews as a service and compliance staffing, delivered by a dedicated ENGOLD team.',
+  industries: 'Risk, compliance and cybersecurity expertise for financial services, healthcare, energy, retail and manufacturing.',
+  'financial-services': 'SOX automation, AML safeguards and FINRA/FFIEC readiness for banks, asset managers and FinTechs.',
+  healthcare: 'HIPAA and HITRUST privacy programs protecting ePHI across providers, payers, digital health and clinical trials.',
+  energy: 'NERC CIP compliance, OT/SCADA security and grid resilience for utilities, oil & gas and renewables.',
+  retail: 'PCI DSS 4.0, e-commerce and POS security, fraud analytics and supplier risk for retail and consumer brands.',
+  manufacturing: 'IEC 62443 OT security, industrial IoT protection and ERP modernization risk for manufacturers.',
+  insights: 'Research, executive surveys and case studies on risk, compliance, cybersecurity and AI from ENGOLD Consulting.',
+  careers: 'Build your career at ENGOLD Consulting. Explore our culture, benefits and open roles in risk, compliance and cybersecurity.',
+  'open-positions': 'Open positions at ENGOLD Consulting across risk advisory, compliance, cybersecurity and technology consulting.',
+  privacy: 'How ENGOLD Consulting collects, uses and protects your personal information.',
+  terms: 'Terms of service governing the use of the ENGOLD Consulting website and services.',
+  cookies: 'Learn how ENGOLD Consulting uses cookies and manage your preferences.',
+};
+
+const setMeta = (attr, key, value) => {
+  let el = document.head.querySelector(`meta[${attr}="${key}"]`);
+  if (!el) {
+    el = document.createElement('meta');
+    el.setAttribute(attr, key);
+    document.head.appendChild(el);
+  }
+  el.setAttribute('content', value);
+};
+
+const applyPageMeta = (page, title, path) => {
+  const description = PAGE_DESCRIPTIONS[page] || DEFAULT_DESCRIPTION;
+  const url = `${SITE_URL}${path}`;
+  document.title = title;
+  setMeta('name', 'description', description);
+  setMeta('property', 'og:title', title);
+  setMeta('property', 'og:description', description);
+  setMeta('property', 'og:url', url);
+  setMeta('name', 'twitter:title', title);
+  setMeta('name', 'twitter:description', description);
+  const canonical = document.head.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', url);
+};
+
 const titleFor = (page) =>
   page === 'home'
-    ? 'ENGOLD Consulting'
+    ? 'ENGOLD Consulting | IT Governance, Risk & Compliance Advisory'
     : `${page.split('-').map((w) => (w.length <= 2 ? w.toUpperCase() : w[0].toUpperCase() + w.slice(1))).join(' ')} | ENGOLD Consulting`;
 
 export default function App() {
@@ -152,6 +245,7 @@ export default function App() {
   const [activeSubRisk, setActiveSubRisk] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mobileExpandedSection, setMobileExpandedSection] = useState(null);
+  const [openFooterColumn, setOpenFooterColumn] = useState(null);
 
   const closeMenus = () => {
     setActiveDropdown(null);
@@ -190,7 +284,7 @@ export default function App() {
   // Every new page starts at the top, like a real page load
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    document.title = titleFor(currentPage);
+    applyPageMeta(currentPage, titleFor(currentPage), pathFor(currentPage, activeArticleId));
   }, [currentPage, activeArticleId]);
 
   const activeNav = getActiveNav(currentPage);
@@ -645,18 +739,38 @@ export default function App() {
         <Legal pageKey={currentPage} onNavigate={navigateTo} />
       )}
 
-      {/* META-STYLE COMPREHENSIVE FOOTER */}
-      <footer className="bg-slate-950 text-white pt-20 pb-12 px-6 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto space-y-16">
-          
-          {/* TOP SECTION: BRAND & VISION */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center pb-12 border-b border-slate-800">
-            <div className="lg:col-span-5 space-y-4">
+      {/* ═══════════════ FOOTER ═══════════════ */}
+      <footer className="bg-slate-950 text-white border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 pt-14 sm:pt-20 pb-8 sm:pb-12">
+
+          {/* TOP: BRAND + CONTACT  |  MOTTO CTA */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start lg:items-center pb-10 sm:pb-12 border-b border-slate-800">
+            <div className="lg:col-span-5 space-y-5">
               <EngoldLogo onClick={() => navigateTo('home')} inverted={true} />
               <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
                 Global advisory bridging executive vision with operational precision across IT governance, risk intelligence, and enterprise transformation.
               </p>
+              <ul className="space-y-2.5 text-sm text-slate-300">
+                <li>
+                  <a href="mailto:info@engoldconsultingllc.com" className="inline-flex items-center gap-2.5 hover:text-orange-400 transition-colors break-all">
+                    <MailIcon className="w-4 h-4 text-orange-400 shrink-0" />
+                    info@engoldconsultingllc.com
+                  </a>
+                </li>
+                <li>
+                  <a href="tel:+8882527899" className="inline-flex items-center gap-2.5 hover:text-orange-400 transition-colors">
+                    <PhoneIcon className="w-4 h-4 text-orange-400 shrink-0" />
+                    +888 252 7899
+                  </a>
+                </li>
+                <li className="flex items-start gap-2.5 text-slate-400">
+                  <MapPinIcon className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                  {/* TODO: replace with the real office address (also in the top bar) */}
+                  <span>123 Business Ave, Suite 100, City, ST 00000</span>
+                </li>
+              </ul>
             </div>
+
             <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
               <div className="space-y-2 min-w-0">
                 <span className="text-[11px] font-mono uppercase tracking-widest text-orange-400 font-bold block">ENGOLD MOTTO</span>
@@ -669,7 +783,7 @@ export default function App() {
                 href="https://www.linkedin.com/company/engold-consulting/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group self-start sm:self-auto shrink-0 inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5"
+                className="group w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 hover:-translate-y-0.5"
               >
                 Start an Engagement
                 <svg className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
@@ -679,66 +793,76 @@ export default function App() {
             </div>
           </div>
 
-          {/* MIDDLE NAVIGATION COLUMNS (META STYLE) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 text-sm">
-            {/* SOLUTIONS */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">Solutions</h4>
-              <ul className="space-y-2.5 text-slate-300 font-medium">
-                <li><button onClick={() => navigateTo('advisory')} className="hover:text-orange-400 transition-colors">Executive Advisory</button></li>
-                <li><button onClick={() => navigateTo('risk-consulting')} className="hover:text-orange-400 transition-colors">Risk Consulting</button></li>
-                <li><button onClick={() => navigateTo('compliance')} className="hover:text-orange-400 transition-colors">Compliance Management</button></li>
-                <li><button onClick={() => navigateTo('cyber-data')} className="hover:text-orange-400 transition-colors">Cyber & Data Architecture</button></li>
-                <li><button onClick={() => navigateTo('managed-services')} className="hover:text-orange-400 transition-colors">Managed Services</button></li>
-              </ul>
-            </div>
-
-            {/* INDUSTRIES */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">Industries</h4>
-              <ul className="space-y-2.5 text-slate-300 font-medium">
-                <li><button onClick={() => navigateTo('financial-services')} className="hover:text-orange-400 transition-colors">Financial Services & Banking</button></li>
-                <li><button onClick={() => navigateTo('healthcare')} className="hover:text-orange-400 transition-colors">Healthcare & Life Sciences</button></li>
-                <li><button onClick={() => navigateTo('energy')} className="hover:text-orange-400 transition-colors">Energy & Infrastructure</button></li>
-                <li><button onClick={() => navigateTo('retail')} className="hover:text-orange-400 transition-colors">Retail & Consumer</button></li>
-                <li><button onClick={() => navigateTo('manufacturing')} className="hover:text-orange-400 transition-colors">Manufacturing & Industrial</button></li>
-              </ul>
-            </div>
-
-            {/* INSIGHTS */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">Insights</h4>
-              <ul className="space-y-2.5 text-slate-300 font-medium">
-                <li><button onClick={() => navigateTo('ai-hub')} className="hover:text-orange-400 transition-colors">Artificial Intelligence Hub</button></li>
-                <li><button onClick={() => navigateTo('global-surveys')} className="hover:text-orange-400 transition-colors">Global Executive Surveys</button></li>
-                <li><button onClick={() => handleOpenArticle('salesforce-growth')} className="hover:text-orange-400 transition-colors">Salesforce Case Study</button></li>
-                <li><button onClick={() => handleOpenArticle('privacy-risk')} className="hover:text-orange-400 transition-colors">Privacy Risk Automation</button></li>
-              </ul>
-            </div>
-
-            {/* COMPANY */}
-            <div className="space-y-4">
-              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">Company</h4>
-              <ul className="space-y-2.5 text-slate-300 font-medium">
-                <li><button onClick={() => navigateTo('about')} className="hover:text-orange-400 transition-colors">About ENGOLD</button></li>
-                <li><button onClick={() => navigateTo('careers')} className="hover:text-orange-400 transition-colors">Careers & Culture</button></li>
-                <li><button onClick={() => navigateTo('open-positions')} className="hover:text-orange-400 transition-colors">Open Positions</button></li>
-                <li><button onClick={() => navigateTo('about')} className="hover:text-orange-400 transition-colors">Leadership & Governance</button></li>
-              </ul>
-            </div>
+          {/* LINK COLUMNS: accordions on mobile, 4-column grid from md up */}
+          <div className="grid grid-cols-1 md:grid-cols-4 md:gap-8 lg:gap-12 py-4 md:py-12 text-sm">
+            {FOOTER_COLUMNS.map((col) => {
+              const open = openFooterColumn === col.title;
+              return (
+                <div key={col.title} className="border-b border-slate-800/80 md:border-0">
+                  <h4>
+                    <button
+                      type="button"
+                      onClick={() => setOpenFooterColumn(open ? null : col.title)}
+                      aria-expanded={open}
+                      className="md:pointer-events-none w-full flex items-center justify-between py-4 md:py-0 md:mb-4 text-xs font-mono font-bold uppercase tracking-wider text-slate-300 md:text-slate-400"
+                    >
+                      {col.title}
+                      <ChevronDown className={`md:hidden w-4 h-4 text-slate-500 transition-transform duration-300 ${open ? 'rotate-180 text-orange-400' : ''}`} />
+                    </button>
+                  </h4>
+                  <ul className={`${open ? 'block' : 'hidden'} md:block space-y-3 md:space-y-2.5 pb-5 md:pb-0 text-slate-300 font-medium`}>
+                    {col.links.map((link) => (
+                      <li key={link.label}>
+                        <a
+                          href={pathFor(link.page, link.articleId)}
+                          onClick={(e) => {
+                            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                            e.preventDefault();
+                            navigateTo(link.page, link.articleId);
+                          }}
+                          className="hover:text-orange-400 transition-colors"
+                        >
+                          {link.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
 
-          {/* LOWER LEGAL & COPYRIGHT (META STYLE) */}
-          <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-slate-400 gap-4">
-            <div className="flex flex-wrap items-center gap-6">
-              <span>© {new Date().getFullYear()} ENGOLD Consulting, Inc. All rights reserved.</span>
-              <button onClick={() => navigateTo('privacy')} className="hover:text-orange-400 transition-colors">Privacy Policy</button>
-              <button onClick={() => navigateTo('terms')} className="hover:text-orange-400 transition-colors">Terms of Service</button>
-              <button onClick={() => navigateTo('cookies')} className="hover:text-orange-400 transition-colors">Cookie Settings</button>
-            </div>
-            <div className="flex items-center space-x-2 text-slate-400">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>All Global Systems Operational</span>
+          {/* BOTTOM: COPYRIGHT · LEGAL · STATUS */}
+          <div className="pt-6 sm:pt-8 border-t border-slate-800 flex flex-col-reverse md:flex-row md:items-center md:justify-between gap-5 text-xs text-slate-400">
+            <span className="text-center md:text-left">© {new Date().getFullYear()} ENGOLD Consulting, Inc. All rights reserved.</span>
+            <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              <nav aria-label="Legal" className="flex flex-wrap justify-center items-center gap-x-5 gap-y-2">
+                {[['privacy', 'Privacy Policy'], ['terms', 'Terms of Service'], ['cookies', 'Cookie Settings']].map(([page, label]) => (
+                  <a
+                    key={page}
+                    href={pathFor(page)}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                      e.preventDefault();
+                      navigateTo(page);
+                    }}
+                    className="hover:text-orange-400 transition-colors"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </nav>
+              <a
+                href="https://www.linkedin.com/company/engold-consulting/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="ENGOLD Consulting on LinkedIn"
+                className="w-9 h-9 rounded-full border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white hover:bg-orange-500 hover:border-orange-500 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" />
+                </svg>
+              </a>
             </div>
           </div>
 
